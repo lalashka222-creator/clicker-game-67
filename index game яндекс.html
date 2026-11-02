@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Кликер 67: Империя</title>
+    <style>
+        /* --- ПЕРЕМЕННЫЕ ДЛЯ ТЕМ --- */
+        :root {
+            --bg-color: #1a1a1a;
+            --container-bg: #2a2a2a;
+            --text-color: white;
+            --text-muted: #aaa;
+            --shop-bg: #111;
+            --shop-item-bg: #333;
+            --shop-item-hover: #555;
+            --border-color: #444;
+        }
+
+        body.light-theme {
+            --bg-color: #f0f0f0;
+            --container-bg: #ffffff;
+            --text-color: #111;
+            --text-muted: #555;
+            --shop-bg: #e0e0e0;
+            --shop-item-bg: #ccc;
+            --shop-item-hover: #bbb;
+            --border-color: #999;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* --- КНОПКА НАСТРОЕК --- */
+        #settingsBtn {
+            position: absolute;
+            top: 20px; right: 20px;
+            width: 50px; height: 50px;
+            border-radius: 50%;
+            background: var(--container-bg);
+            border: 2px solid var(--border-color);
+            color: var(--text-color);
+            font-size: 24px;
+            cursor: pointer;
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: transform 0.3s;
+        }
+        #settingsBtn:hover { transform: rotate(90deg); }
+
+        /* --- ПАНЕЛЬ НАСТРОЕК --- */
+        #settingsPanel {
+            position: absolute;
+            top: 80px; right: 20px;
+            background: var(--container-bg);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            z-index: 999;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        #settingsPanel label { font-weight: bold; margin-bottom: 5px; display: block; }
+        #settingsPanel select {
+            padding: 8px;
+            border-radius: 5px;
+            border: 1px solid var(--border-color);
+            background: var(--shop-bg);
+            color: var(--text-color);
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        /* --- ОСНОВНОЙ КОНТЕЙНЕР --- */
+        .game-container {
+            text-align: center;
+            background-color: var(--container-bg);
+            padding: 20px 40px;
+            border-radius: 15px;
+            box-shadow: 0 0 25px rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 10;
+            max-height: 95vh;
+            overflow-y: auto;
+            transition: background-color 0.3s;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin-bottom: 10px;
+            background: var(--shop-bg);
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        #clickImage {
+            cursor: pointer;
+            border-radius: 15px;
+            transition: transform 0.1s;
+            user-select: none;
+            width: 200px;
+            height: 200px;
+            object-fit: cover;
+            box-shadow: 0 0 15px rgba(255, 0, 0, 0.5);
+            margin-top: 10px;
+        }
+
+        #clickImage:active { transform: scale(0.95); }
+
+        #scoreDisplay { color: #00ff00; margin: 10px 0; font-size: 28px; cursor: pointer; user-select: none; }
+        #clickPowerDisplay { color: var(--text-muted); margin-bottom: 15px; }
+
+        #clickButton {
+            background-color: #ff0000;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 20px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            box-shadow: 0 5px 0 #990000;
+            margin-bottom: 20px;
+        }
+
+        #clickButton:hover { background-color: #cc0000; }
+        #clickButton:active { transform: translateY(5px); box-shadow: 0 0 0 #990000; }
+
+        .shop {
+            background: var(--shop-bg);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            width: 100%;
+            margin-bottom: 15px;
+            transition: background-color 0.3s;
+        }
+
+        .shop h3 { margin-top: 0; color: #ffcc00; font-size: 16px; }
+
+        .shop-item {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 5px;
+            background-color: var(--shop-item-bg);
+            color: var(--text-color);
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.2s;
+            font-size: 14px;
+        }
+
+        .shop-item:hover { background-color: var(--shop-item-hover); }
+        .shop-item:disabled { background-color: var(--shop-item-hover); color: var(--text-muted); cursor: not-allowed; }
+
+        .bruteforce { background: #220000; padding: 15px; border-radius: 10px; border: 1px solid #ff0000; width: 100%; margin-top: 10px; }
+        .bruteforce h3 { margin-top: 0; color: #ff0000; font-size: 16px; }
+        .bruteforce input { padding: 10px; border-radius: 5px; border: none; margin-bottom: 10px; width: 80%; text-align: center; font-size: 16px; font-weight: bold; }
+        .bruteforce button { background: #ff0000; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .bruteforce button:hover { background: #cc0000; }
+        #bruteMsg { color: #ffcc00; font-size: 14px; margin-top: 10px; height: 40px;}
+
+        .danger-zone { margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--border-color); width: 100%; }
+        #deleteMoneyBtn { background: transparent; color: #ff0000; border: 1px solid #ff0000; padding: 10px; width: 100%; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        #deleteMoneyBtn:hover { background: #ff0000; color: white; }
+
+        /* --- СЕКРЕТКИ --- */
+        #secretScreen { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(0, 0, 0, 0.85); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100; pointer-events: none; text-align: center; }
+        #secretScreen h2 { color: #ff00ff; font-size: 40px; text-shadow: 0 0 20px #ff00ff; margin: 0; }
+        #secretScreen p { color: white; font-size: 20px; }
+        .hidden { display: none !important; }
+        .balloon { position: absolute; border-radius: 50%; cursor: pointer; animation: floatUp 3s linear forwards; box-shadow: inset -5px -5px 15px rgba(0,0,0,0.5); pointer-events: auto; }
+        @keyframes floatUp { 0% { transform: translateY(0) scale(1); opacity: 1; } 100% { transform: translateY(-100vh) scale(1.5); opacity: 0; } }
+
+        /* --- МИНИ-ИГРА --- */
+        #fightScreen { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(10, 10, 10, 0.95); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 200; pointer-events: auto; }
+        #arena { width: 600px; height: 300px; background: #222; border: 4px solid #ff0000; border-radius: 10px; position: relative; overflow: hidden; margin-bottom: 20px; box-shadow: 0 0 30px rgba(255, 0, 0, 0.5); }
+        .fighter { position: absolute; bottom: 0; width: 50px; height: 50px; border-radius: 5px; transition: bottom 0.3s, left 0.1s; }
+        #player { left: 50px; background-color: #00ff00; box-shadow: 0 0 10px #00ff00; }
+        #enemy { right: 50px; background-color: #ff0000; box-shadow: 0 0 10px #ff0000; }
+        .health-bar-container { width: 100%; height: 15px; background: #333; margin-bottom: 5px; border-radius: 5px; overflow: hidden; }
+        .health-bar { height: 100%; width: 100%; background: #00ff00; transition: width 0.2s; }
+        #enemyHealthBar { background: #ff0000; }
+        .controls { display: flex; gap: 10px; }
+        .controls button { padding: 15px 25px; font-size: 18px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; color: white; }
+        #btnPunch { background: #ffaa00; color: black; }
+        #btnKick { background: #ff0000; }
+        #btnJump { background: #0088ff; }
+        .controls button:active { transform: scale(0.95); }
+        #fightMsg { margin-top: 20px; font-size: 24px; font-weight: bold; color: #ffcc00; height: 30px; }
+
+        /* --- ЧИТЫ --- */
+        #cheatPanel { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #111; border: 3px solid #00ff00; padding: 20px; border-radius: 10px; box-shadow: 0 0 50px rgba(0, 255, 0, 0.5); z-index: 300; display: flex; flex-direction: column; align-items: center; }
+        #cheatPanel h3 { color: #00ff00; margin-top: 0; text-transform: uppercase; }
+        #cheatPanel input { padding: 10px; font-size: 20px; text-align: center; margin-bottom: 10px; border-radius: 5px; border: 1px solid #00ff00; background: #000; color: #00ff00; width: 150px; }
+        #cheatPanel button { padding: 10px 20px; background: #00ff00; color: black; font-weight: bold; border: none; border-radius: 5px; cursor: pointer; }
+
+        /* --- НАДПИСЬ "А ТЫ НЕ ЧИТЕР?" --- */
+        #cheaterScreen { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.95); display: flex; justify-content: center; align-items: center; z-index: 500; pointer-events: none; opacity: 1; transition: opacity 3s ease-out; }
+        #cheaterScreen h1 { color: #ff0000; font-size: 60px; text-shadow: 0 0 30px #ff0000; text-transform: uppercase; margin: 0; text-align: center; }
+        .fade-out { opacity: 0 !important; }
+    </style>
+</head>
+<body>
+
+    <!-- Кнопка настроек -->
+    <button id="settingsBtn">⚙️</button>
+
+    <!-- Панель настроек -->
+    <div id="settingsPanel" class="hidden">
+        <div>
+            <label id="lblLang">Язык:</label>
+            <select id="langSelect">
+                <option value="ru">Русский</option>
+                <option value="en">English</option>
+            </select>
+        </div>
+        <div>
+            <label id="lblTheme">Тема:</label>
+            <select id="themeSelect">
+                <option value="dark">Тёмная</option>
+                <option value="light">Светлая</option>
+            </select>
+        </div>
+    </div>
+
+    <div id="cheaterScreen" class="hidden">
+        <h1 id="cheaterText">А ТЫ НЕ ЧИТЕР?</h1>
+    </div>
+
+    <div id="cheatPanel" class="hidden">
+        <h3 id="cheatTitle">СЕКРЕТНЫЙ КОД</h3>
+        <input type="password" id="cheatInput" placeholder="****">
+        <button id="cheatSubmit" data-lang="btn_submit">ВВЕСТИ</button>
+        <p style="color:red; font-size:12px; margin:5px 0 0 0;" id="cheatMsg"></p>
+    </div>
+
+    <div id="secretScreen" class="hidden">
+        <h2 id="secretTitle"></h2>
+        <p id="secretDesc"></p>
+    </div>
+
+    <div id="fightScreen" class="hidden">
+        <h2 style="color:#ff0000; margin-bottom: 10px;" id="fightTitle">МИНИ-ИГРА: ДРАКА!</h2>
+        
+        <div style="width: 600px; margin-bottom: 5px;"><span id="lblEnemy">Враг:</span>
+            <div class="health-bar-container"><div id="enemyHealthBar" class="health-bar"></div></div>
+        </div>
+        <div style="width: 600px; margin-bottom: 10px;"><span id="lblPlayer">Ты:</span>
+            <div class="health-bar-container"><div id="playerHealthBar" class="health-bar"></div></div>
+        </div>
+
+        <div id="arena">
+            <div id="player" class="fighter"></div>
+            <div id="enemy" class="fighter"></div>
+        </div>
+
+        <div class="controls">
+            <button id="btnPunch" data-lang="btn_punch">Удар рукой</button>
+            <button id="btnKick" data-lang="btn_kick">Удар ногой</button>
+            <button id="btnJump" data-lang="btn_jump">Прыжок</button>
+        </div>
+
+        <div id="fightMsg">...</div>
+    </div>
+
+    <div class="game-container">
+        <div class="stats">
+            <span><span data-lang="stat_total">Всего кликов:</span> <b id="totalClicksDisplay">0</b></span>
+            <span><span data-lang="stat_session">За заход:</span> <b id="sessionClicksDisplay">0</b></span>
+        </div>
+
+        <h1 id="scoreDisplay"><span data-lang="money">Деньги:</span> 0 <span data-lang="rub">руб.</span></h1>
+        <h3 id="clickPowerDisplay"><span data-lang="per_click">За клик:</span> 1</h3>
+
+        <img id="clickImage" src="https://media1.tenor.com/m/97kmzJG6PqwAAAAC/67.gif" alt="67 Кликер">
+        
+        <button id="clickButton" data-lang="btn_click">КЛИКНУТЬ</button>
+
+        <div class="shop">
+            <h3 data-lang="shop_title">Магазин Богача</h3>
+            <button class="shop-item" id="buyPower"><span data-lang="buy_power">Улучшить клик</span> (<span data-lang="price">Цена:</span> 50)</button>
+            <button class="shop-item" id="buyYacht"><span data-lang="buy_yacht">Купить Яхту</span> (<span data-lang="price">Цена:</span> 100.000)</button>
+            <button class="shop-item" id="buyVilla"><span data-lang="buy_villa">Купить Виллу</span> (<span data-lang="price">Цена:</span> 2.000.000)</button>
+            <button class="shop-item" id="buyCountry"><span data-lang="buy_country">Купить Страну</span> (<span data-lang="price">Цена:</span> 5.000.000)</button>
+        </div>
+
+        <div class="bruteforce">
+            <h3 data-lang="brute_title">ВЗЛОМ СЕЙФА (1.000.000)</h3>
+            <p style="font-size:12px; color:var(--text-muted); margin-top:0;"><span data-lang="brute_level">Уровень сейфа:</span> <b id="vaultLevelDisplay">1</b> <span data-lang="brute_of">из</span> 3</p>
+            <input type="number" id="bruteInput" placeholder="XXXXXX">
+            <button id="bruteButton" data-lang="brute_btn">Взломать</button>
+            <div id="bruteMsg"></div>
+        </div>
+
+        <div class="danger-zone">
+            <button id="deleteMoneyBtn" data-lang="delete_money">СБРОСИТЬ ВСЕ ДЕНЬГИ (0 руб.)</button>
+        </div>
+    </div>
+
+    <script>
+        // --- ЛОКАЛИЗАЦИЯ ---
+        const translations = {
+            ru: {
+                stat_total: "Всего кликов:", stat_session: "За заход:",
+                money: "Деньги:", rub: "руб.", per_click: "За клик:",
+                btn_click: "КЛИКНУТЬ", shop_title: "Магазин Богача",
+                buy_power: "Улучшить клик", buy_yacht: "Купить Яхту", buy_villa: "Купить Виллу", buy_country: "Купить Страну",
+                price: "Цена:", brute_title: "ВЗЛОМ СЕЙФА (1.000.000)", brute_level: "Уровень сейфа:", brute_of: "из",
+                brute_btn: "Взломать", delete_money: "СБРОСИТЬ ВСЕ ДЕНЬГИ (0 руб.)",
+                btn_submit: "ВВЕСТИ", fight_title: "МИНИ-ИГРА: ДРАКА!",
+                lbl_enemy: "Враг:", lbl_player: "Ты:", btn_punch: "Удар рукой", btn_kick: "Удар ногой", btn_jump: "Прыжок",
+                cheat_title: "СЕКРЕТНЫЙ КОД", cheater_text: "А ТЫ НЕ ЧИТЕР?",
+                y_c: "Яхта куплена (+5 к клику)", v_c: "Вилла куплена (+100 к клику)", c_c: "СТРАНА КУПЛЕНА (+1.000 к клику)",
+                settings: "Настройки", lang: "Язык:", theme: "Тема:", dark: "Тёмная", light: "Светлая"
+            },
+            en: {
+                stat_total: "Total clicks:", stat_session: "Session clicks:",
+                money: "Money:", rub: "RUB", per_click: "Per click:",
+                btn_click: "CLICK", shop_title: "Rich Shop",
+                buy_power: "Upgrade Click", buy_yacht: "Buy Yacht", buy_villa: "Buy Villa", buy_country: "Buy Country",
+                price: "Price:", brute_title: "SAFE CRACK (1,000,000)", brute_level: "Vault Level:", brute_of: "of",
+                brute_btn: "Crack", delete_money: "RESET ALL MONEY (0 RUB)",
+                btn_submit: "SUBMIT", fight_title: "MINIGAME: FIGHT!",
+                lbl_enemy: "Enemy:", lbl_player: "You:", btn_punch: "Punch", btn_kick: "Kick", btn_jump: "Jump",
+                cheat_title: "SECRET CODE", cheater_text: "ARE YOU A CHEATER?",
+                y_c: "Yacht bought (+5)", v_c: "Villa bought (+100)", c_c: "COUNTRY BOUGHT (+1,000)",
+                settings: "Settings", lang: "Language:", theme: "Theme:", dark: "Dark", light: "Light"
+            }
+        };
+
+        let currentLang = localStorage.getItem('clicker67_lang') || 'ru';
+        let currentTheme = localStorage.getItem('clicker67_theme') || 'dark';
+
+        function applyLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('clicker67_lang', lang);
+            
+            // Перевод текста в HTML
+            document.querySelectorAll('[data-lang]').forEach(el => {
+                const key = el.getAttribute('data-lang');
+                if (translations[lang][key]) el.innerText = translations[lang][key];
+            });
+
+            document.getElementById('lblLang').innerText = translations[lang].lang;
+            document.getElementById('lblTheme').innerText = translations[lang].theme;
+            document.getElementById('cheatTitle').innerText = translations[lang].cheat_title;
+            document.getElementById('cheaterText').innerText = translations[lang].cheater_text;
+            document.getElementById('fightTitle').innerText = translations[lang].fight_title;
+            document.getElementById('lblEnemy').innerText = translations[lang].lbl_enemy;
+            document.getElementById('lblPlayer').innerText = translations[lang].lbl_player;
+            
+            updateUI(); 
+        }
+
+        function applyTheme(theme) {
+            currentTheme = theme;
+            localStorage.setItem('clicker67_theme', theme);
+            if (theme === 'light') document.body.classList.add('light-theme');
+            else document.body.classList.remove('light-theme');
+        }
+
+        // --- СОХРАНЕНИЯ ---
+        let score = parseFloat(localStorage.getItem('clicker67_score')) || 0;
+        let clickPower = parseInt(localStorage.getItem('clicker67_power')) || 1;
+        let clicksCount = parseInt(localStorage.getItem('clicker67_clicks')) || 0;
+        let totalClicks = parseInt(localStorage.getItem('clicker67_total_clicks')) || 0;
+        let sessionClicks = 0;
+        let secretActive = false;
+
+        let hasYacht = localStorage.getItem('clicker67_yacht') === 'true';
+        let hasVilla = localStorage.getItem('clicker67_villa') === 'true';
+        let hasCountry = localStorage.getItem('clicker67_country') === 'true';
+
+        let vaultLevel = parseInt(localStorage.getItem('clicker67_vaultLevel')) || 1;
+        let bruteAttemptsLeft = parseInt(localStorage.getItem('clicker67_bruteAttempts')) || 5;
+        let lastPlayedDate = localStorage.getItem('clicker67_lastDate') || '';
+        
+        const vaultPasswords = [676751, 675233, 777]; 
+        let secretCode = vaultPasswords[vaultLevel - 1];
+        let firstTry = true; 
+
+        const today = new Date().toDateString();
+        if (lastPlayedDate !== today) {
+            bruteAttemptsLeft = 5;
+            localStorage.setItem('clicker67_lastDate', today);
+            localStorage.setItem('clicker67_bruteAttempts', bruteAttemptsLeft);
+        }
+
+        // --- ЭЛЕМЕНТЫ ---
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const clickPowerDisplay = document.getElementById('clickPowerDisplay');
+        const totalClicksDisplay = document.getElementById('totalClicksDisplay');
+        const sessionClicksDisplay = document.getElementById('sessionClicksDisplay');
+        
+        const clickImage = document.getElementById('clickImage');
+        const clickButton = document.getElementById('clickButton');
+        
+        const secretScreen = document.getElementById('secretScreen');
+        const secretTitle = document.getElementById('secretTitle');
+        const secretDesc = document.getElementById('secretDesc');
+
+        const fightScreen = document.getElementById('fightScreen');
+        const player = document.getElementById('player');
+        const enemy = document.getElementById('enemy');
+        const playerHealthBar = document.getElementById('playerHealthBar');
+        const enemyHealthBar = document.getElementById('enemyHealthBar');
+        const btnPunch = document.getElementById('btnPunch');
+        const btnKick = document.getElementById('btnKick');
+        const btnJump = document.getElementById('btnJump');
+        const fightMsg = document.getElementById('fightMsg');
+
+        const buyPowerBtn = document.getElementById('buyPower');
+        const buyYachtBtn = document.getElementById('buyYacht');
+        const buyVillaBtn = document.getElementById('buyVilla');
+        const buyCountryBtn = document.getElementById('buyCountry');
+
+        const bruteInput = document.getElementById('bruteInput');
+        const bruteButton = document.getElementById('bruteButton');
+        const bruteMsg = document.getElementById('bruteMsg');
+        const vaultLevelDisplay = document.getElementById('vaultLevelDisplay');
+
+        const deleteMoneyBtn = document.getElementById('deleteMoneyBtn');
+
+        const cheatPanel = document.getElementById('cheatPanel');
+        const cheatInput = document.getElementById('cheatInput');
+        const cheatSubmit = document.getElementById('cheatSubmit');
+        const cheatMsg = document.getElementById('cheatMsg');
+        let scoreClickCount = 0;
+
+        const cheaterScreen = document.getElementById('cheaterScreen');
+
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playSound(freq, type = 'square', duration = 0.08) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            oscillator.type = type;
+            oscillator.frequency.value = freq;
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + duration);
+        }
+
+        function saveGame() {
+            localStorage.setItem('clicker67_score', score);
+            localStorage.setItem('clicker67_power', clickPower);
+            localStorage.setItem('clicker67_clicks', clicksCount);
+            localStorage.setItem('clicker67_total_clicks', totalClicks);
+            localStorage.setItem('clicker67_yacht', hasYacht);
+            localStorage.setItem('clicker67_villa', hasVilla);
+            localStorage.setItem('clicker67_country', hasCountry);
+            localStorage.setItem('clicker67_vaultLevel', vaultLevel);
+            localStorage.setItem('clicker67_bruteAttempts', bruteAttemptsLeft);
+        }
+
+        function updateUI() {
+            const t = translations[currentLang];
+            scoreDisplay.innerHTML = `<span data-lang="money">${t.money}</span> ${Math.floor(score).toLocaleString('ru-RU')} <span data-lang="rub">${t.rub}</span>`;
+            clickPowerDisplay.innerHTML = `<span data-lang="per_click">${t.per_click}</span> ${clickPower.toLocaleString('ru-RU')}`;
+            
+            totalClicksDisplay.innerText = totalClicks.toLocaleString('ru-RU');
+            sessionClicksDisplay.innerText = sessionClicks.toLocaleString('ru-RU');
+
+            buyPowerBtn.innerHTML = `<span data-lang="buy_power">${t.buy_power}</span> (<span data-lang="price">${t.price}</span> ${(50 + (clickPower - 1) * 50).toLocaleString('ru-RU')})`;
+
+            if (hasYacht) {
+                buyYachtBtn.disabled = true;
+                buyYachtBtn.innerText = t.y_c;
+            } else {
+                buyYachtBtn.innerHTML = `<span data-lang="buy_yacht">${t.buy_yacht}</span> (<span data-lang="price">${t.price}</span> 100.000)`;
+            }
+            if (hasVilla) {
+                buyVillaBtn.disabled = true;
+                buyVillaBtn.innerText = t.v_c;
+            } else {
+                buyVillaBtn.innerHTML = `<span data-lang="buy_villa">${t.buy_villa}</span> (<span data-lang="price">${t.price}</span> 2.000.000)`;
+            }
+            if (hasCountry) {
+                buyCountryBtn.disabled = true;
+                buyCountryBtn.innerText = t.c_c;
+            } else {
+                buyCountryBtn.innerHTML = `<span data-lang="buy_country">${t.buy_country}</span> (<span data-lang="price">${t.price}</span> 5.000.000)`;
+            }
+
+            if (vaultLevel > 3) {
+                document.querySelector('.bruteforce').style.display = 'none';
+            } else {
+                vaultLevelDisplay.innerText = vaultLevel;
+                if (bruteAttemptsLeft <= 0) {
+                    bruteMsg.style.color = "#ff0000";
+                    bruteMsg.innerText = currentLang === 'ru' ? "ПОПЫТКИ НА СЕГОДНЯ ИСЧЕРПАНЫ. ЖДИ ЗАВТРА!" : "OUT OF ATTEMPTS FOR TODAY. WAIT FOR TOMORROW!";
+                    bruteButton.disabled = true;
+                    bruteInput.disabled = true;
+                }
+            }
+        }
+
+        function addScore() {
+            if (secretActive) return;
+            score += clickPower;
+            clicksCount++;
+            totalClicks++;
+            sessionClicks++;
+            updateUI();
+            saveGame();
+            playSound(600);
+
+            if (clicksCount >= 50) {
+                clicksCount = 0;
+                saveGame();
+                startRandomSecretEvent();
+            }
+        }
+
+        clickImage.addEventListener('click', addScore);
+        clickButton.addEventListener('click', addScore);
+
+        // НАСТРОЙКИ
+        document.getElementById('settingsBtn').addEventListener('click', () => {
+            document.getElementById('settingsPanel').classList.toggle('hidden');
+        });
+
+        document.getElementById('langSelect').addEventListener('change', (e) => applyLanguage(e.target.value));
+        document.getElementById('themeSelect').addEventListener('change', (e) => applyTheme(e.target.value));
+
+        // СБРОС ДЕНЕГ
+        deleteMoneyBtn.addEventListener('click', () => {
+            score = 0;
+            updateUI();
+            saveGame();
+            playSound(200, 'sawtooth', 0.5);
+        });
+
+        // ЧИТЫ
+        scoreDisplay.addEventListener('click', () => {
+            scoreClickCount++;
+            if (scoreClickCount >= 5) {
+                cheatPanel.classList.remove('hidden');
+                scoreClickCount = 0;
+                playSound(1000, 'sawtooth', 0.2);
+            }
+        });
+
+        cheatSubmit.addEventListener('click', () => {
+            if (cheatInput.value === '9922') {
+                score += 999999999999;
+                updateUI();
+                saveGame();
+                cheatMsg.style.color = '#00ff00';
+                cheatMsg.innerText = 'УСПЕХ!';
+                playSound(1500, 'sine', 0.5);
+                setTimeout(() => {
+                    cheatPanel.classList.add('hidden');
+                    cheatInput.value = '';
+                    cheatMsg.innerText = '';
+                }, 1500);
+            } else {
+                cheatMsg.style.color = '#ff0000';
+                cheatMsg.innerText = currentLang === 'ru' ? 'НЕВЕРНЫЙ КОД' : 'WRONG CODE';
+                playSound(200, 'sawtooth', 0.2);
+            }
+        });
+
+        // СОБЫТИЯ
+        function startRandomSecretEvent() {
+            const eventType = Math.floor(Math.random() * 4);
+            secretActive = true;
+
+            if (eventType === 0) {
+                secretScreen.classList.remove('hidden');
+                secretTitle.innerText = currentLang === 'ru' ? "СЕКРЕТНОЕ СОБЫТИЕ: ШАРИКИ!" : "SECRET EVENT: BALLOONS!";
+                secretDesc.innerText = currentLang === 'ru' ? "Лови шарики!" : "Catch the balloons!";
+                playSound(1000, 'sawtooth', 0.5);
+                for (let i = 0; i < 10; i++) {
+                    setTimeout(createBalloon, i * 200);
+                }
+                setTimeout(() => {
+                    secretActive = false;
+                    secretScreen.classList.add('hidden');
+                    document.querySelectorAll('.balloon').forEach(b => b.remove());
+                }, 4000);
+            } else if (eventType === 1) {
+                secretScreen.classList.remove('hidden');
+                secretTitle.innerText = currentLang === 'ru' ? "ЗОЛОТАЯ ЛИХОРАДКА!" : "GOLD RUSH!";
+                secretDesc.innerText = "+100";
+                playSound(1200, 'sine', 0.3);
+                score += 100;
+                updateUI();
+                saveGame();
+                setTimeout(() => { secretActive = false; secretScreen.classList.add('hidden'); }, 2000);
+            } else if (eventType === 2) {
+                secretScreen.classList.remove('hidden');
+                secretTitle.innerText = currentLang === 'ru' ? "БОНУСНЫЙ КЛИК!" : "BONUS CLICK!";
+                secretDesc.innerText = "+500";
+                playSound(1400, 'square', 0.2);
+                score += 500;
+                updateUI();
+                saveGame();
+                setTimeout(() => { secretActive = false; secretScreen.classList.add('hidden'); }, 2000);
+            } else {
+                startFightMinigame();
+            }
+        }
+
+        function createBalloon() {
+            const balloon = document.createElement('div');
+            balloon.classList.add('balloon');
+            const size = Math.floor(Math.random() * 50) + 30;
+            const colors = ['#ff0033', '#00ff00', '#00ccff', '#ffcc00', '#ff00ff'];
+            balloon.style.width = size + 'px';
+            balloon.style.height = size + 'px';
+            balloon.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            balloon.style.left = Math.random() * 90 + 'vw';
+            balloon.style.bottom = '-100px';
+
+            balloon.addEventListener('click', (e) => {
+                e.stopPropagation();
+                score += 10;
+                updateUI();
+                saveGame();
+                playSound(1200, 'sine', 0.1);
+                balloon.remove();
+            });
+            secretScreen.appendChild(balloon);
+        }
+
+        // МИНИ-ИГРА
+        let playerHP = 100;
+        let enemyHP = 100;
+        let inFight = false;
+        let isJumping = false;
+        let enemyInterval;
+
+        function startFightMinigame() {
+            fightScreen.classList.remove('hidden');
+            playerHP = 100;
+            enemyHP = 100;
+            inFight = true;
+            isJumping = false;
+            
+            player.style.bottom = '0px';
+            enemy.style.right = '50px';
+            
+            playerHealthBar.style.width = '100%';
+            enemyHealthBar.style.width = '100%';
+            fightMsg.innerText = currentLang === 'ru' ? "Бой начался!" : "Fight started!";
+
+            enemyInterval = setInterval(enemyAttack, 1000);
+        }
+
+        function enemyAttack() {
+            if (!inFight) return;
+
+            if (!isJumping) {
+                playerHP -= 15;
+                playSound(300, 'sawtooth', 0.1);
+                playerHealthBar.style.width = playerHP + '%';
+                fightMsg.innerText = currentLang === 'ru' ? "ВРАГ ПОПАЛ ТЕБЕ!" : "ENEMY HIT YOU!";
+                player.style.backgroundColor = '#fff';
+                setTimeout(() => player.style.backgroundColor = '#00ff00', 100);
+
+                if (playerHP <= 0) endFight(false);
+            } else {
+                fightMsg.innerText = currentLang === 'ru' ? "Ты уклонился!" : "You dodged!";
+            }
+        }
+
+        function playerAttack(type) {
+            if (!inFight) return;
+
+            let damage = type === 'punch' ? 15 : 30;
+            enemyHP -= damage;
+            if (enemyHP < 0) enemyHP = 0;
+            enemyHealthBar.style.width = enemyHP + '%';
+            
+            playSound(800, 'square', 0.1);
+            enemy.style.right = '150px';
+            setTimeout(() => { if(inFight) enemy.style.right = '50px'; }, 200);
+
+            if (enemyHP <= 0) endFight(true);
+        }
+
+        function jump() {
+            if (!inFight || isJumping) return;
+            isJumping = true;
+            player.style.bottom = '80px';
+            playSound(600, 'sine', 0.1);
+            
+            setTimeout(() => {
+                player.style.bottom = '0px';
+                isJumping = false;
+            }, 500);
+        }
+
+        function endFight(playerWon) {
+            inFight = false;
+            clearInterval(enemyInterval);
+            
+            if (playerWon) {
+                fightMsg.innerText = currentLang === 'ru' ? "ПОБЕДА! +1000 РУБЛЕЙ!" : "VICTORY! +1000 RUB!";
+                fightMsg.style.color = "#00ff00";
+                score += 1000;
+                updateUI();
+                saveGame();
+                playSound(1500, 'sine', 0.5);
+            } else {
+                fightMsg.innerText = currentLang === 'ru' ? "ТЫ ПРОИГРАЛ!" : "YOU LOST!";
+                fightMsg.style.color = "#ff0000";
+                playSound(200, 'sawtooth', 0.5);
+            }
+
+            setTimeout(() => {
+                fightScreen.classList.add('hidden');
+                secretActive = false;
+                fightMsg.style.color = "#ffcc00";
+            }, 3000);
+        }
+
+        btnPunch.addEventListener('click', () => playerAttack('punch'));
+        btnKick.addEventListener('click', () => playerAttack('kick'));
+        btnJump.addEventListener('click', jump);
+
+        document.addEventListener('keydown', (e) => {
+            if (!inFight) return;
+            if (e.key.toLowerCase() === 'п' || e.key.toLowerCase() === 'g') playerAttack('punch');
+            if (e.key.toLowerCase() === 'у' || e.key.toLowerCase() === 'e') playerAttack('kick');
+            if (e.key === 'ArrowUp' || e.key === ' ') jump();
+        });
+
+        // МАГАЗИН
+        buyPowerBtn.addEventListener('click', () => {
+            const price = 50 + (clickPower - 1) * 50;
+            if (score >= price) {
+                score -= price;
+                clickPower += 1;
+                updateUI();
+                saveGame();
+                playSound(800, 'sine', 0.2);
+            } else playSound(200, 'sawtooth', 0.1);
+        });
+
+        buyYachtBtn.addEventListener('click', () => {
+            if (score >= 100000 && !hasYacht) {
+                score -= 100000;
+                clickPower += 5;
+                hasYacht = true;
+                updateUI();
+                saveGame();
+                playSound(1000, 'sine', 0.3);
+            } else playSound(200, 'sawtooth', 0.1);
+        });
+
+        buyVillaBtn.addEventListener('click', () => {
+            if (score >= 2000000 && !hasVilla) {
+                score -= 2000000;
+                clickPower += 100;
+                hasVilla = true;
+                updateUI();
+                saveGame();
+                playSound(1200, 'sine', 0.3);
+            } else playSound(200, 'sawtooth', 0.1);
+        });
+
+        buyCountryBtn.addEventListener('click', () => {
+            if (score >= 5000000 && !hasCountry) {
+                score -= 5000000;
+                clickPower += 1000;
+                hasCountry = true;
+                updateUI();
+                saveGame();
+                playSound(1500, 'sine', 0.5);
+            } else playSound(200, 'sawtooth', 0.1);
+        });
+
+        // БРУТФОРС
+        bruteButton.addEventListener('click', () => {
+            if (vaultLevel > 3 || bruteAttemptsLeft <= 0) return;
+            
+            const userCode = parseInt(bruteInput.value);
+            bruteInput.value = '';
+            
+            if (isNaN(userCode)) {
+                bruteMsg.innerText = currentLang === 'ru' ? "Введи число!" : "Enter a number!";
+                return;
+            }
+            
+            bruteAttemptsLeft--;
+            localStorage.setItem('clicker67_bruteAttempts', bruteAttemptsLeft);
+
+            if (userCode === secretCode) {
+                score += 1000000;
+                updateUI();
+                playSound(1500, 'sine', 0.5);
+                
+                if (firstTry && bruteAttemptsLeft === 4) {
+                    cheaterScreen.classList.remove('hidden');
+                    setTimeout(() => {
+                        cheaterScreen.classList.add('fade-out');
+                        setTimeout(() => {
+                            cheaterScreen.classList.add('hidden');
+                            cheaterScreen.classList.remove('fade-out');
+                        }, 3000);
+                    }, 1000);
+                }
+
+                bruteMsg.style.color = "#00ff00";
+                bruteMsg.innerText = currentLang === 'ru' ? "ДОСТУП РАЗРЕШЕН! +1.000.000" : "ACCESS GRANTED! +1,000,000";
+                
+                vaultLevel++;
+                localStorage.setItem('clicker67_vaultLevel', vaultLevel);
+                if (vaultLevel <= 3) {
+                    secretCode = vaultPasswords[vaultLevel - 1];
+                    firstTry = true;
+                    bruteAttemptsLeft = 5;
+                    localStorage.setItem('clicker67_bruteAttempts', bruteAttemptsLeft);
+                    bruteButton.disabled = false;
+                    bruteInput.disabled = false;
+                } else {
+                    setTimeout(() => { document.querySelector('.bruteforce').style.display = 'none'; }, 3000);
+                }
+            } else {
+                firstTry = false;
+                playSound(200, 'sawtooth', 0.2);
+                if (bruteAttemptsLeft <= 0) {
+                    bruteMsg.style.color = "#ff0000";
+                    bruteMsg.innerText = currentLang === 'ru' ? "СЕЙФ ЗАБЛОКИРОВАН ДО ЗАВТРА!" : "SAFE LOCKED UNTIL TOMORROW!";
+                    bruteButton.disabled = true;
+                    bruteInput.disabled = true;
+                } else {
+                    bruteMsg.style.color = "#ffcc00";
+                    if (userCode < secretCode) bruteMsg.innerText = currentLang === 'ru' ? `Неверно. Код больше. Осталось: ${bruteAttemptsLeft}` : `Wrong. Code is higher. Left: ${bruteAttemptsLeft}`;
+                    else bruteMsg.innerText = currentLang === 'ru' ? `Неверно. Код меньше. Осталось: ${bruteAttemptsLeft}` : `Wrong. Code is lower. Left: ${bruteAttemptsLeft}`;
+                }
+            }
+            updateUI();
+        });
+
+        // Применяем сохраненные настройки при загрузке
+        applyTheme(currentTheme);
+        applyLanguage(currentLang);
+        document.getElementById('langSelect').value = currentLang;
+        document.getElementById('themeSelect').value = currentTheme;
+        
+        updateUI();
+    </script>
+</body>
+</html>
